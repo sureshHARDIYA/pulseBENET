@@ -13,11 +13,19 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+builder.Services.AddScoped<AuditSaveChangesInterceptor>();
+
 // Register fluent validation
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 var cs = builder.Configuration.GetConnectionString("Default");
-builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(cs));
+builder.Services.AddDbContext<AppDbContext>((sp, opt) =>
+{
+    opt.UseNpgsql(cs);
+    opt.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>());
+});
 
 var app = builder.Build();
 
