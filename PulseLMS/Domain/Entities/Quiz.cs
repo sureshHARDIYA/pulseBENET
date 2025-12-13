@@ -13,6 +13,7 @@ public class Quiz
     
     public List<Category> Categories { get; set; } = [];
     
+    public List<Question> Questions { get; set; } = [];
     public List<QuizCategory> QuizCategories { get; set; } = [];
 
 }
