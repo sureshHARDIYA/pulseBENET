@@ -16,30 +16,35 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<Quiz>(b =>
         {
             b.ToTable("quizzes");
-            
+
             b.HasKey(x => x.Id);
             b.Property(x => x.Id)
                 .HasColumnType("uuid")
                 .HasDefaultValueSql("gen_random_uuid()");
-            
+
             b.Property(x => x.Title).IsRequired().HasMaxLength(200);
             b.Property(x => x.Description).HasMaxLength(1000);
 
             b.Property(x => x.Type).HasConversion<string>().IsRequired();
-            b.Property(x => x.Level).HasConversion<string>().IsRequired();
             b.Property(x => x.Access).HasConversion<string>().IsRequired();
 
+            // 1:M relations with QuizCategory
             b.HasMany(x => x.QuizCategories)
                 .WithOne(x => x.Quiz)
                 .HasForeignKey(x => x.QuizId)
                 .OnDelete(DeleteBehavior.Cascade);
+            
+            // M:N relationship with QuizCategory being the Pivot Table
+            b.HasMany(q => q.Categories)
+                .WithMany(c => c.Quizzes)
+                .UsingEntity<QuizCategory>();
         });
 
         modelBuilder.Entity<QuizCategory>(b =>
         {
             b.ToTable("quiz_categories");
             b.HasKey(x => new { x.QuizId, x.CategoryId });
-            
+
             // One quiz can be linked to many categories
             // Deleting quiz will delete quiz and unlink with categories
             b.HasOne(x => x.Quiz)
@@ -53,6 +58,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany(x => x.QuizCategories)
                 .HasForeignKey(x => x.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
+            
+            
         });
         
         modelBuilder.Entity<Category>(b =>
@@ -71,6 +78,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
             b.Property(x => x.Description)
                 .HasMaxLength(1000);
+
+            b.HasOne(x => x.Parent)
+             .WithMany(x => x.Children)
+             .HasForeignKey(x => x.ParentId)
+             .OnDelete(DeleteBehavior.Restrict);
+
+            b.HasIndex(x => x.ParentId);
         });
     }
 }
