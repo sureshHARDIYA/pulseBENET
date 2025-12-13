@@ -8,7 +8,7 @@ public enum QuestionType
     ShortAnswer
 }
 
-public class Question
+public class Question: AuditLog
 {
     public Guid Id { get; set; }
 
@@ -29,7 +29,7 @@ public class Question
     public List<QuestionOption> Options { get; set; } = [];
 }
 
-public class QuestionOption
+public class QuestionOption: AuditLog
 {
     public Guid Id { get; set; }
 

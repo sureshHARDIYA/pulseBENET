@@ -1,6 +1,6 @@
 namespace PulseLMS.Domain.Entities;
 
-public class QuizCategory
+public class QuizCategory: AuditLog
 {
     public Guid QuizId { get; set; }
     public Quiz Quiz { get; set; } = null!;

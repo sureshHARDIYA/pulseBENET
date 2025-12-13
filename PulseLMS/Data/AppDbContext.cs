@@ -29,8 +29,10 @@
 
                 b.Property(x => x.Type).HasConversion<string>().IsRequired();
                 b.Property(x => x.Access).HasConversion<string>().IsRequired();
+                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+                b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
 
-                // 1:M relations with QuizCategory
+                // 1: M relations with QuizCategory
                 b.HasMany(x => x.QuizCategories)
                     .WithOne(x => x.Quiz)
                     .HasForeignKey(x => x.QuizId)
@@ -61,7 +63,8 @@
                     .HasForeignKey(x => x.CategoryId)
                     .OnDelete(DeleteBehavior.Restrict);
                 
-                
+                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+                b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
             });
             
             modelBuilder.Entity<Category>(b =>
@@ -87,6 +90,9 @@
                  .OnDelete(DeleteBehavior.Restrict);
 
                 b.HasIndex(x => x.ParentId);
+                
+                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+                b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
             });
 
             modelBuilder.Entity<Question>(b =>
@@ -108,6 +114,8 @@
                 b.Property(x => x.SortOrder).IsRequired();
                 b.Property(x => x.Points).IsRequired();
                 b.Property(x => x.AllowMultipleCorrect).IsRequired();
+                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+                b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
                 
                 b.HasOne(x => x.Quiz)
                     .WithMany(q => q.Questions)
@@ -141,6 +149,8 @@
                 b.Property(x => x.PromptWrong).HasMaxLength(1000);
                 b.Property(x => x.Score).IsRequired();
                 b.Property(x => x.SortOrder).IsRequired();
+                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+                b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
                 
                 b.HasOne(o => o.Question)
                     .WithMany(q => q.Options)

@@ -3,7 +3,7 @@ namespace PulseLMS.Domain.Entities;
 public enum QuizType { Words, Sentences, Mixed }
 public enum AccessType { Free, Paid }
 
-public class Quiz
+public class Quiz: AuditLog
 {
     public Guid Id { get; set; }
     public string Title { get; set; } = null!;

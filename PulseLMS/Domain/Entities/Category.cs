@@ -1,6 +1,6 @@
 namespace PulseLMS.Domain.Entities;
 
-public class Category
+public class Category: AuditLog
 {
     public Guid Id { get; set; }
     public string? Name { get; set; } = null!;
