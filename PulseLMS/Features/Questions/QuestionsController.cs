@@ -101,6 +101,53 @@ public class QuestionsController(AppDbContext dbContext): BaseController
             AllowMultipleCorrect = question.AllowMultipleCorrect,
         });
     }
-    
-    
+
+    [HttpPut("{questionId:guid}")]
+    [ProducesResponseType(typeof(QuestionResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateQuestion([FromRoute] Guid questionId, [FromRoute] Guid quizId, [FromBody] UpdateQuestionRequest request, CancellationToken ct)
+    {
+        var question = await dbContext.Questions
+            .FirstOrDefaultAsync(q => (q.Id == questionId && q.QuizId == quizId), ct);
+        if (question is null)
+            return NotFound();
+
+
+        question.Title = request.Title.Trim();
+        question.Description = request.Description?.Trim();
+        question.Type = request.Type;
+        question.SortOrder = request.SortOrder;
+        question.Points = request.Points;
+        question.AllowMultipleCorrect = request.AllowMultipleCorrect;
+        
+        dbContext.Questions.Update(question);
+        await dbContext.SaveChangesAsync(ct);
+        
+        return Ok(new QuestionResponse
+        {
+            Id = question.Id,
+            Title = question.Title,
+            Type = question.Type,
+            Description = question.Description,
+            SortOrder = question.SortOrder,
+            Points = question.Points,
+            AllowMultipleCorrect = question.AllowMultipleCorrect,
+        });
+    }
+
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteQuestion([FromRoute] Guid id,  [FromRoute] Guid quizId, CancellationToken ct)
+    {
+        var question = await dbContext.Questions
+            .FirstOrDefaultAsync(q => q.Id == id && q.QuizId == quizId, ct);     
+        if (question is null)
+            return NotFound();
+        
+        dbContext.Questions.Remove(question);
+        await dbContext.SaveChangesAsync(ct);
+        
+        return NoContent();
+    }
 }
