@@ -1,3 +1,4 @@
+using FluentValidation;
 using PulseLMS.Domain.Entities;
 
 namespace PulseLMS.Features.Questions.DTO;
@@ -13,3 +14,19 @@ public class UpdateQuestionRequest
     
     public bool AllowMultipleCorrect { get; init; }
 }
+
+public class UpdateQuestionRequestValidator
+    : AbstractValidator<UpdateQuestionRequest>
+{
+    public UpdateQuestionRequestValidator()
+    {
+        this.ApplyCommonRules(x => x.Title,
+            x => x.Description,
+            x => x.Type,
+            x => x.SortOrder,
+            x => x.Points,
+            x => x.AllowMultipleCorrect
+        );
+    }
+}
+

@@ -15,16 +15,18 @@ public sealed class QuestionCreateRequest
     public bool AllowMultipleCorrect { get; init; }
 }
 
-public class QuestionCreateRequestValidator : AbstractValidator<QuestionCreateRequest>
+public class QuestionCreateRequestValidator
+    : AbstractValidator<QuestionCreateRequest>
 {
     public QuestionCreateRequestValidator()
     {
-        RuleFor(x => x.Title)
-            .NotEmpty()
-            .MaximumLength(200);
-        
-        RuleFor(x => x.Description).MaximumLength(1000);
-        
-        RuleFor(x => x.Type).IsInEnum();
+        this.ApplyCommonRules(
+            x => x.Title,
+            x => x.Description,
+            x => x.Type,
+            x => x.SortOrder,
+            x => x.Points,
+            x => x.AllowMultipleCorrect
+        );
     }
 }

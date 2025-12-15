@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using PulseLMS.Common;
 using PulseLMS.Data;
 using PulseLMS.Domain.Entities;
+using PulseLMS.Features.QuestionOptions.DTO;
 using PulseLMS.Features.Questions.DTO;
 
 namespace PulseLMS.Features.Questions;
@@ -18,23 +19,7 @@ public class QuestionsController(AppDbContext dbContext): BaseController
                 .AsNoTracking()
                 .Where(x => x.QuizId == quizId)
                 .OrderBy(x => x.Title)
-                .Select(res => new QuestionResponse
-                {
-                    Id = res.Id,
-                    Title = res.Title,
-                    Type = res.Type,
-                    Description = res.Description,
-                    SortOrder = res.SortOrder,
-                    Points = res.Points,
-                    AllowMultipleCorrect = res.AllowMultipleCorrect,
-                    Options = res.Options.Select(op => new QuestionOptionResponse
-                    {
-                        Id = op.Id,
-                        Text = op.Text,
-                        SortOrder = op.SortOrder,
-                        Score = op.Score,
-                    })
-                })
+                .Select(QuestionProjection.List)
                 .ToListAsync(ct);
         
         return Ok(questions);
@@ -61,45 +46,28 @@ public class QuestionsController(AppDbContext dbContext): BaseController
         
         var response = await dbContext.Questions
             .AsNoTracking()
-            .Where(q => q.Id == question.Id)
-            .Select(res => new QuestionResponse
-            {
-                Id = res.Id,
-                Title = res.Title,
-                Type = res.Type,
-                Description = res.Description,
-                SortOrder = res.SortOrder,
-                Points = res.Points,
-                AllowMultipleCorrect = res.AllowMultipleCorrect,
-            })
+            .Where(q => q.Id == question.Id && q.QuizId == quizId)
+            .Select(QuestionProjection.Detail)
             .FirstAsync(ct);
         
         return CreatedAtAction(nameof(GetQuestionById), new { quizId, id = response.Id }, response);
     }
     
-    [HttpGet("{id:guid}")]
+    [HttpGet("{questionId:guid}")]
     [ProducesResponseType(typeof(QuestionResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetQuestionById([FromRoute] Guid quizId, [FromRoute] Guid id, CancellationToken ct)
+    public async Task<IActionResult> GetQuestionById([FromRoute] Guid quizId, [FromRoute] Guid questionId, CancellationToken ct)
     {
-        var question = await dbContext
-            .Questions
+        var question = await dbContext.Questions
             .AsNoTracking()
-            .FirstOrDefaultAsync(entity => (entity.Id == id && entity.QuizId == quizId), ct);
+            .Where(q => q.Id == questionId && q.QuizId == quizId)
+            .Select(QuestionProjection.DetailWithOptions) 
+            .FirstOrDefaultAsync(ct);
         
         if (question is null)
             return NotFound();
         
-        return Ok(new QuestionResponse
-        {
-            Id = question.Id,
-            Title = question.Title,
-            Type = question.Type,
-            Description = question.Description,
-            SortOrder = question.SortOrder,
-            Points = question.Points,
-            AllowMultipleCorrect = question.AllowMultipleCorrect,
-        });
+        return Ok(question);
     }
 
     [HttpPut("{questionId:guid}")]
@@ -120,28 +88,24 @@ public class QuestionsController(AppDbContext dbContext): BaseController
         question.Points = request.Points;
         question.AllowMultipleCorrect = request.AllowMultipleCorrect;
         
-        dbContext.Questions.Update(question);
         await dbContext.SaveChangesAsync(ct);
         
-        return Ok(new QuestionResponse
-        {
-            Id = question.Id,
-            Title = question.Title,
-            Type = question.Type,
-            Description = question.Description,
-            SortOrder = question.SortOrder,
-            Points = question.Points,
-            AllowMultipleCorrect = question.AllowMultipleCorrect,
-        });
+        var response = await dbContext.Questions
+            .AsNoTracking()
+            .Where(q => q.Id == questionId && q.QuizId == quizId)
+            .Select(QuestionProjection.Detail)
+            .FirstAsync(ct);
+
+        return Ok(response);
     }
 
-    [HttpDelete("{id:guid}")]
+    [HttpDelete("{questionId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteQuestion([FromRoute] Guid id,  [FromRoute] Guid quizId, CancellationToken ct)
+    public async Task<IActionResult> DeleteQuestion([FromRoute] Guid questionId,  [FromRoute] Guid quizId, CancellationToken ct)
     {
         var question = await dbContext.Questions
-            .FirstOrDefaultAsync(q => q.Id == id && q.QuizId == quizId, ct);     
+            .FirstOrDefaultAsync(q => q.Id == questionId && q.QuizId == quizId, ct);     
         if (question is null)
             return NotFound();
         
