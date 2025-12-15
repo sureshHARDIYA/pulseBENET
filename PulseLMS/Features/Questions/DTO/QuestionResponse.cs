@@ -1,4 +1,5 @@
 using PulseLMS.Domain.Entities;
+using PulseLMS.Features.QuestionOptions.DTO;
 
 namespace PulseLMS.Features.Questions.DTO;
 
@@ -19,10 +20,3 @@ public class QuestionResponse
     public IEnumerable<QuestionOptionResponse> Options { get; set; } = [];
 }
 
-public class QuestionOptionResponse
-{
-    public Guid Id { get; init; }
-    public required string Text { get; init; }
-    public int SortOrder { get; init; }
-    public int Score { get; init; }
-}
