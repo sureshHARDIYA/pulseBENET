@@ -32,6 +32,35 @@ public sealed class CategoriesController(AppDbContext db, ICurrentUser currentUs
         return Ok(categories);
     }
 
+	/// <summary>
+	/// Get a category by id
+	/// </summary>
+	/// <param name="id">Category id</param>
+	/// <param name="ct">Cancellation token</param>
+	/// <returns>Category</returns>
+	[HttpGet("{id:guid}")]
+	[ProducesResponseType(typeof(CategoryResponse), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	public async Task<ActionResult<CategoryResponse>> GetById(Guid id, CancellationToken ct)
+	{
+			var category = await db.Categories
+				.AsNoTracking()
+				.Where(c => c.Id == id)
+				.Select(c => new CategoryResponse
+				{
+					Id = c.Id,
+					Name = c.Name ?? string.Empty,
+					Description = c.Description,
+					ParentId = c.ParentId
+				})
+				.FirstOrDefaultAsync(ct);
+
+			if (category is null)
+				return NotFound();
+
+			return Ok(category);
+	}
+
     /// <summary>
     /// Get all categories as tree 
     /// </summary>
@@ -109,8 +138,7 @@ public sealed class CategoriesController(AppDbContext db, ICurrentUser currentUs
             ParentId = entity.ParentId
         };
 
-        // If you later add GET /categories/{id}, change the Location to that route.
-        return Created(string.Empty, response);
+			return CreatedAtAction(nameof(GetById), new { id = entity.Id }, response);
     }
 
     [Authorize(Policy = "AuthorOrAdmin")]

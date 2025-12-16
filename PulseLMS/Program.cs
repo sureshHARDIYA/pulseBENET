@@ -97,9 +97,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(options =>
    {
        options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-       options.RoutePrefix = string.Empty;
+         options.RoutePrefix = "swagger";
    });
 }
+ 
+ // Root endpoint
+ app.MapGet("/", () => Results.Json(new
+ {
+     Message = "Silence is golden!",
+     swagger = "https://sureshhardiya.github.io/pulseBENET/"
+ }));
 
 app.Run();
 
