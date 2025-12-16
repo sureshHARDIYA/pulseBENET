@@ -40,7 +40,7 @@ jobs:
       - name: Generate OpenAPI (v1)
         run: |
           mkdir -p docs
-          dotnet swagger tofile \
+          $HOME/.dotnet/tools/swagger tofile \
             --output docs/openapi.json \
             ./PulseLMS/bin/Release/net10.0/PulseLMS.dll v1
 
