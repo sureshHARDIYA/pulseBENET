@@ -23,7 +23,7 @@ public sealed class CategoriesController(AppDbContext db, ICurrentUser currentUs
             .Select(c => new CategoryResponse
             {
                 Id = c.Id,
-                Name = c.Name,
+                Name = c.Name ?? string.Empty,
                 Description = c.Description,
                 ParentId = c.ParentId
             })
@@ -50,25 +50,25 @@ public sealed class CategoriesController(AppDbContext db, ICurrentUser currentUs
             c.Description,
             c.ParentId
         }).ToListAsync(ct);
-        
-        var byParent = categories.ToLookup(c => c.ParentId); 
-        
+
+        var byParent = categories.ToLookup(c => c.ParentId);
+
         List<CategoryTreeResponse> Build(Guid? parentId)
         {
             return byParent[parentId]
                 .Select(c => new CategoryTreeResponse
                 {
                     Id = c.Id,
-                    Name = c.Name,
+                    Name = c.Name ?? string.Empty,
                     Description = c.Description,
                     Children = Build(c.Id)
                 })
                 .ToList();
         }
-        
+
         return Ok(Build(null));
     }
-    
+
     /// <summary>
     /// Create a category (supports nesting via ParentId)
     /// </summary>
@@ -104,7 +104,7 @@ public sealed class CategoriesController(AppDbContext db, ICurrentUser currentUs
         var response = new CategoryResponse
         {
             Id = entity.Id,
-            Name = entity.Name,
+            Name = entity.Name ?? string.Empty,
             Description = entity.Description,
             ParentId = entity.ParentId
         };
@@ -112,7 +112,7 @@ public sealed class CategoriesController(AppDbContext db, ICurrentUser currentUs
         // If you later add GET /categories/{id}, change the Location to that route.
         return Created(string.Empty, response);
     }
-    
+
     [Authorize(Policy = "AuthorOrAdmin")]
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(CategoryResponse), StatusCodes.Status200OK)]
@@ -120,9 +120,19 @@ public sealed class CategoriesController(AppDbContext db, ICurrentUser currentUs
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CategoryResponse>> Put(Guid id, [FromBody] CategoryRequest request, CancellationToken ct)
     {
+        var userRole = User.FindFirst("user_role")?.Value;
+        var userId = currentUser.UserId;
+
+        if (userRole == "subscriber" || string.IsNullOrEmpty(userRole))
+            return Forbid();
+
         var category = await db.Categories.FirstOrDefaultAsync(c => c.Id == id, ct);
         if (category is null)
             return NotFound();
+
+        // Author can only update categories created by them
+        if (userRole == "author" && category.CreatedBy != userId)
+            return Forbid();
 
         if (request.ParentId == id)
             return BadRequest("ParentId cannot be the same as the category id.");
@@ -157,7 +167,7 @@ public sealed class CategoriesController(AppDbContext db, ICurrentUser currentUs
             ParentId = category.ParentId
         });
     }
-    
+
     // Walk up the parent chain from candidate parent to root. If we hit `targetId`, it's a cycle.
     private async Task<bool> IsDescendantAsync(Guid candidateParentId, Guid targetId, CancellationToken ct)
     {
@@ -178,7 +188,7 @@ public sealed class CategoriesController(AppDbContext db, ICurrentUser currentUs
 
         return false;
     }
-    
+
     [Authorize(Policy = "AuthorOrAdmin")]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

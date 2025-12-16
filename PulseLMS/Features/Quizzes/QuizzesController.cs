@@ -8,7 +8,7 @@ using PulseLMS.Features.Categories.Services;
 using PulseLMS.Features.Quizzes.DTO;
 
 namespace PulseLMS.Features.Quizzes;
-public sealed class QuizzesController(AppDbContext dbContext, CategoryService categoryService) : BaseController
+public sealed class QuizzesController(AppDbContext dbContext, CategoryService categoryService, ICurrentUser currentUser) : BaseController
 {
     [HttpGet]
     [ProducesResponseType(typeof(List<QuizResponse>), StatusCodes.Status200OK)]
@@ -132,6 +132,22 @@ public sealed class QuizzesController(AppDbContext dbContext, CategoryService ca
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteQuiz(Guid id, CancellationToken ct)
     {
+        var userRole = User.FindFirst("user_role")?.Value;
+        var userId = currentUser.UserId;
+
+        if (userRole == "subscriber" || string.IsNullOrEmpty(userRole))
+            return Forbid();
+
+        var quiz = await dbContext.Quizzes.FirstOrDefaultAsync(q => q.Id == id, ct);
+
+        if (quiz is null)
+            return NotFound();
+
+        if (userRole == "author" && quiz.CreatedBy != userId)
+        {
+            return Forbid();
+        }
+
         var deleted = await dbContext.Quizzes
             .Where(q => q.Id == id)
             .ExecuteDeleteAsync(ct);

@@ -18,9 +18,16 @@ public sealed class CurrentUser(IHttpContextAccessor accessor) : ICurrentUser
     {
         get
         {
-            // Supabase uses "sub" for the user id. ASP.NET may map it to NameIdentifier.
-            var sub = User?.FindFirstValue("sub") ?? User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = accessor.HttpContext?.User;
+            if (user?.Identity?.IsAuthenticated != true) return null;
+
+            // Supabase uses "sub" for user id
+            var sub = user.FindFirstValue(ClaimTypes.NameIdentifier)
+                      ?? user.FindFirstValue("sub");
+
             return Guid.TryParse(sub, out var id) ? id : null;
         }
     }
+    public string? Role => accessor.HttpContext?.User?.FindFirstValue("user_role");
+
 }

@@ -18,7 +18,7 @@ public static class QuizProjections
             .Select(cat => new CategoryResponse()
             {
                 Id = cat.Id,
-                Name = cat.Name
+                Name = cat.Name ?? string.Empty
             })
             .ToList()
     };
