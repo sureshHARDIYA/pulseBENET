@@ -5,7 +5,6 @@ using PulseLMS.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using PulseLMS.Common;
-using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 var projectRef = builder.Configuration["Supabase:ProjectRef"]!;
@@ -48,15 +47,7 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "PulseLMS API",
-        Version = "v1",
-        Description = "Endpoints for quizzes, questions, attempts and scoring."
-    });
-});
+builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddHttpContextAccessor();
