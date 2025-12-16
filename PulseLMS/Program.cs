@@ -5,6 +5,7 @@ using PulseLMS.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using PulseLMS.Common;
+using PulseLMS.Features.Categories.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var projectRef = builder.Configuration["Supabase:ProjectRef"]!;
@@ -54,6 +55,7 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<AuditSaveChangesInterceptor>();
+builder.Services.AddScoped<CategoryService>();
 
 // Register fluent validation
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
