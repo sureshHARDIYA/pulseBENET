@@ -205,7 +205,7 @@ public class QuizAttemptController(AppDbContext db, ICurrentUser currentUser): B
 			.GroupBy(a => a.UserId!)
 			.Select(g => new LeaderboardEntryResponse
 			{
-				UserId = g.Key,
+				UserId = g.Key!.Value,
 				TotalScore = g.Sum(a => a.Score),
 				Attempts = g.Count(),
 				AverageScore = g.Average(a => a.Score)
