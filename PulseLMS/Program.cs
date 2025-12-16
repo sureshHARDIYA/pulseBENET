@@ -1,8 +1,45 @@
+using System.Text;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using PulseLMS.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using PulseLMS.Common;
 
 var builder = WebApplication.CreateBuilder(args);
+var projectRef = builder.Configuration["Supabase:ProjectRef"]!;
+var issuer = $"https://{projectRef}.supabase.co/auth/v1";
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        // Supabase publishes OpenID metadata here:
+        options.Authority = issuer;
+        options.MetadataAddress = $"{issuer}/.well-known/openid-configuration";
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = issuer,
+
+            // Supabase tokens usually use aud = "authenticated"
+            ValidateAudience = true,
+            ValidAudience = "authenticated",
+
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            NameClaimType = "sub",
+            ClockSkew = TimeSpan.FromMinutes(2),
+            RoleClaimType = "user_role"
+        };
+    });
+
+builder.Services.AddAuthorization(o =>
+{
+    o.AddPolicy("AdminOnly", p => p.RequireClaim("user_role", "admin"));
+    o.AddPolicy("AuthorOrAdmin", p => p.RequireClaim("user_role", "admin", "author"));
+});
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -36,6 +73,8 @@ if (app.Environment.IsDevelopment())
 }
 app.MapControllers();
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {

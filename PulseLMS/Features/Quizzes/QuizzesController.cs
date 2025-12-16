@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PulseLMS.Common;
@@ -22,6 +23,7 @@ public sealed class QuizzesController(AppDbContext dbContext, CategoryService ca
         return Ok(quizzes);
     }
 
+    [Authorize(Policy = "AuthorOrAdmin")]
     [HttpPost]
     [ProducesResponseType(typeof(QuizResponse),StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -70,6 +72,7 @@ public sealed class QuizzesController(AppDbContext dbContext, CategoryService ca
         return quiz is null ? NotFound() : Ok(quiz);
     }
 
+    [Authorize(Policy = "AuthorOrAdmin")]
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(QuizResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -123,6 +126,7 @@ public sealed class QuizzesController(AppDbContext dbContext, CategoryService ca
         }
     }
 
+    [Authorize(Policy = "AuthorOrAdmin")]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
