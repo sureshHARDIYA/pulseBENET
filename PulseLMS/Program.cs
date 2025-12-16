@@ -69,7 +69,8 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 var cs = builder.Configuration.GetConnectionString("Default");
 builder.Services.AddDbContext<AppDbContext>((sp, opt) =>
 {
-    opt.UseNpgsql(cs);
+	opt.UseNpgsql(cs);
+
     if (builder.Environment.IsDevelopment())
     {
         opt.EnableDetailedErrors();
