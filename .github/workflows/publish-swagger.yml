@@ -33,12 +33,13 @@ jobs:
         run: dotnet build ./PulseLMS/PulseLMS.csproj -c Release --no-restore
 
       - name: Install Swashbuckle CLI
-        run: dotnet tool install -g Swashbuckle.AspNetCore.Cli
+        run: |
+          dotnet tool install Swashbuckle.AspNetCore.Cli --tool-path ./ci-tools
 
       - name: Generate OpenAPI (v1)
         run: |
           mkdir -p docs
-          ~/.dotnet/tools/dotnet-swagger tofile \
+          ./ci-tools/dotnet-swagger tofile \
             --output docs/openapi.json \
             ./PulseLMS/bin/Release/net10.0/PulseLMS.dll v1
 
