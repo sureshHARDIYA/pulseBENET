@@ -1,0 +1,60 @@
+name: Publish Swagger to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore ./PulseLMS/PulseLMS.csproj
+
+      - name: Build
+        run: dotnet build ./PulseLMS/PulseLMS.csproj -c Release --no-restore
+
+      - name: Install Swashbuckle CLI
+        run: dotnet tool install -g Swashbuckle.AspNetCore.Cli
+
+      - name: Generate OpenAPI (v1)
+        run: |
+          mkdir -p docs
+          ~/.dotnet/tools/dotnet-swagger tofile \
+            --output docs/openapi.json \
+            ./PulseLMS/bin/Release/net10.0/PulseLMS.dll v1
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+
