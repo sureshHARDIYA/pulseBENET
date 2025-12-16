@@ -12,11 +12,10 @@
 	<script>
 		window.addEventListener('load', function () {
 			window.ui = SwaggerUIBundle({
-				url: 'openapi.json?v=' + Date.now(),
+				url: './openapi.json',  
 				dom_id: '#swagger-ui',
 				presets: [SwaggerUIBundle.presets.apis],
-				layout: 'BaseLayout',
-				swagger: "2.3.0",
+				layout: 'BaseLayout'
 			});
 		});
 	</script>
