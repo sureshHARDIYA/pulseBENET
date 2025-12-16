@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PulseLMS.Common;
@@ -7,7 +8,7 @@ using PulseLMS.Features.Categories.DTO;
 
 namespace PulseLMS.Features.Categories;
 
-public sealed class CategoriesController(AppDbContext db) : BaseController
+public sealed class CategoriesController(AppDbContext db, ICurrentUser currentUser) : BaseController
 {
     /// <summary>
     /// Get all categories
@@ -71,6 +72,7 @@ public sealed class CategoriesController(AppDbContext db) : BaseController
     /// <summary>
     /// Create a category (supports nesting via ParentId)
     /// </summary>
+    [Authorize(Policy = "AuthorOrAdmin")]
     [HttpPost]
     [ProducesResponseType(typeof(CategoryResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -111,6 +113,7 @@ public sealed class CategoriesController(AppDbContext db) : BaseController
         return Created(string.Empty, response);
     }
     
+    [Authorize(Policy = "AuthorOrAdmin")]
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(CategoryResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -176,23 +179,31 @@ public sealed class CategoriesController(AppDbContext db) : BaseController
         return false;
     }
     
+    [Authorize(Policy = "AuthorOrAdmin")]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
-        // Load category (tracking)
+        var userRole = User.FindFirst("user_role")?.Value;
+        var userId = currentUser.UserId;
+
+        if (userRole == "subscriber" || string.IsNullOrEmpty(userRole))
+            return Forbid();
+
         var category = await db.Categories.FirstOrDefaultAsync(c => c.Id == id, ct);
         if (category is null)
             return NotFound();
 
-        // Block if it has children
+        if (userRole == "author" && category.CreatedBy != userId)
+            return Forbid();
+
         var hasChildren = await db.Categories.AnyAsync(c => c.ParentId == id, ct);
         if (hasChildren)
             return BadRequest("Cannot delete category because it has child categories. Delete/move children first.");
 
-        // Block if linked to quizzes
         var isUsedByQuizzes = await db.QuizCategories.AnyAsync(qc => qc.CategoryId == id, ct);
         if (isUsedByQuizzes)
             return BadRequest("Cannot delete category because it is linked to quizzes. Unlink it first.");
@@ -200,7 +211,8 @@ public sealed class CategoriesController(AppDbContext db) : BaseController
         db.Categories.Remove(category);
         await db.SaveChangesAsync(ct);
 
-        return NoContent(); 
+        return NoContent();
     }
+
 
 }

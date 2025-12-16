@@ -24,3 +24,7 @@ Thumbs.db
 
 appsettings.Development.json
 appsettings.Local.json
+
+supabase/migrations/supabase/
+supabase/.temp/
+supabase/migrations/.temp/
