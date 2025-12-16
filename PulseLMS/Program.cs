@@ -14,11 +14,8 @@ var builder = WebApplication.CreateBuilder(args);
 var projectRef = builder.Configuration["Supabase:ProjectRef"]!;
 var issuer = $"https://{projectRef}.supabase.co/auth/v1";
 
-// Configure logging early so we can see detailed startup info
+// Disable console logging
 builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.AddDebug();
-builder.Logging.SetMinimumLevel(builder.Environment.IsDevelopment() ? LogLevel.Debug : LogLevel.Information);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -82,57 +79,6 @@ builder.Services.AddDbContext<AppDbContext>((sp, opt) =>
 });
 
 var app = builder.Build();
-
-// Log effective environment and connection details
-string MaskConnectionString(string connectionString)
-{
-    try
-    {
-        var b = new NpgsqlConnectionStringBuilder(connectionString);
-        if (!string.IsNullOrEmpty(b.Password)) b.Password = "***";
-        return b.ToString();
-    }
-    catch
-    {
-        return connectionString;
-    }
-}
-
-app.Logger.LogInformation("Environment: {Environment}", app.Environment.EnvironmentName);
-app.Logger.LogInformation("Supabase ProjectRef: {ProjectRef}", projectRef);
-app.Logger.LogInformation("Using connection string (Default): {ConnectionString}", MaskConnectionString(cs ?? ""));
-app.Logger.LogInformation("OSSupportsIPv6={IPv6}, OSSupportsIPv4={IPv4}", Socket.OSSupportsIPv6, Socket.OSSupportsIPv4);
-
-try
-{
-    // Resolve DB host addresses to see what the client will try
-    var parsed = new NpgsqlConnectionStringBuilder(cs ?? "");
-    if (!string.IsNullOrWhiteSpace(parsed.Host))
-    {
-        var addresses = Dns.GetHostAddresses(parsed.Host);
-        foreach (var addr in addresses)
-        {
-            app.Logger.LogInformation("DNS resolved {Host} -> {Address}", parsed.Host, addr);
-        }
-    }
-}
-catch (Exception ex)
-{
-    app.Logger.LogWarning(ex, "Failed to resolve database host addresses.");
-}
-
-// Log the actual DbConnection string constructed by EF/Npgsql (masked)
-try
-{
-    using var scope = app.Services.CreateScope();
-    var ctx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    var actual = ctx.Database.GetDbConnection().ConnectionString;
-    app.Logger.LogInformation("EF DbConnection.ConnectionString: {ConnectionString}", MaskConnectionString(actual));
-}
-catch (Exception ex)
-{
-    app.Logger.LogWarning(ex, "Unable to obtain EF DbConnection at startup.");
-}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
