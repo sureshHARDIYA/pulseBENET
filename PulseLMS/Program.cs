@@ -59,6 +59,50 @@ builder.Services.AddProblemDetails();
 
 builder.Services.AddHttpContextAccessor();
 
+// CORS
+var allowedOrigins = builder.Configuration
+	.GetSection("Cors:AllowedOrigins")
+	.Get<string[]>() ?? Array.Empty<string>();
+
+builder.Services.AddCors(options =>
+{
+	options.AddPolicy("AppCors", policy =>
+	{
+		if (builder.Environment.IsDevelopment())
+		{
+			// In development allow any localhost (any scheme/port) + configured origins
+			policy.SetIsOriginAllowed(origin =>
+			{
+				if (allowedOrigins.Any(o => string.Equals(o.TrimEnd('/'), origin.TrimEnd('/'), StringComparison.OrdinalIgnoreCase)))
+					return true;
+
+				if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+					return uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+					       uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase);
+
+				return false;
+			});
+		}
+		else
+		{
+			// In non-development environments, allow only explicitly configured origins
+			if (allowedOrigins.Length > 0)
+			{
+				policy.WithOrigins(allowedOrigins);
+			}
+			else
+			{
+				// No origins configured -> deny all by default (no wildcard)
+				policy.WithOrigins(Array.Empty<string>());
+			}
+		}
+
+		policy.AllowAnyHeader()
+		      .AllowAnyMethod()
+		      .SetPreflightMaxAge(TimeSpan.FromHours(1));
+	});
+});
+
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<AuditSaveChangesInterceptor>();
 builder.Services.AddScoped<CategoryService>();
@@ -86,10 +130,11 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-app.MapControllers();
 app.UseHttpsRedirection();
+app.UseCors("AppCors");
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapControllers();
 
 if (app.Environment.IsDevelopment())
 {
