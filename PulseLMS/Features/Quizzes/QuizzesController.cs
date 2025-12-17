@@ -11,16 +11,42 @@ namespace PulseLMS.Features.Quizzes;
 public sealed class QuizzesController(AppDbContext dbContext, CategoryService categoryService, ICurrentUser currentUser) : BaseController
 {
     [HttpGet]
-    [ProducesResponseType(typeof(List<QuizResponse>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAllQuizzes(CancellationToken ct)
+	[ProducesResponseType(typeof(PagedResponse<QuizResponse>), StatusCodes.Status200OK)]
+	public async Task<IActionResult> GetAllQuizzes(
+		[FromQuery] SearchRequest request,
+		CancellationToken ct = default)
     {
-        var quizzes = await dbContext.Quizzes
-            .AsNoTracking()
-            .OrderBy(q => q.Title)
-            .Select(QuizProjections.ToResponse)
-            .ToListAsync(ct);
+		var pageNumber = request.Page < 0 ? 0 : request.Page;
+		var pageSizeClamped = request.PageSize <= 0 ? 10 : Math.Min(request.PageSize, 100);
 
-        return Ok(quizzes);
+		var query = dbContext.Quizzes.AsNoTracking();
+
+		if (!string.IsNullOrWhiteSpace(request.Search))
+		{
+			var term = $"%{request.Search.Trim()}%";
+			query = query.Where(q => q.Title != null && EF.Functions.Like(q.Title, term));
+		}
+
+		var totalItems = await query.CountAsync(ct);
+
+		var items = await query
+			.OrderBy(q => q.Title)
+			.Skip(pageNumber * pageSizeClamped)
+			.Take(pageSizeClamped)
+			.Select(QuizProjections.ToResponse)
+			.ToListAsync(ct);
+
+		var totalPages = pageSizeClamped == 0 ? 0 : (int)Math.Ceiling(totalItems / (double)pageSizeClamped);
+		Response.Headers["X-Total-Count"] = totalItems.ToString();
+
+		return Ok(new PagedResponse<QuizResponse>
+		{
+			Items = items,
+			Page = pageNumber,
+			PageSize = pageSizeClamped,
+			TotalItems = totalItems,
+			TotalPages = totalPages
+		});
     }
 
     [Authorize(Policy = "AuthorOrAdmin")]

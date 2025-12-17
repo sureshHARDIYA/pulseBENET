@@ -14,22 +14,49 @@ public sealed class CategoriesController(AppDbContext db, ICurrentUser currentUs
     /// Get all categories
     /// </summary>
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<CategoryResponse>>> GetAllCategories(CancellationToken ct)
+	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType(typeof(PagedResponse<CategoryResponse>), StatusCodes.Status200OK)]
+	public async Task<ActionResult<PagedResponse<CategoryResponse>>> GetAllCategories(
+		[FromQuery] SearchRequest request,
+		CancellationToken ct = default)
     {
-        var categories = await db.Categories
-            .AsNoTracking()
-            .OrderBy(c => c.Name)
-            .Select(c => new CategoryResponse
-            {
-                Id = c.Id,
-                Name = c.Name ?? string.Empty,
-                Description = c.Description,
-                ParentId = c.ParentId
-            })
-            .ToListAsync(ct);
+		var pageNumber = request.Page < 0 ? 0 : request.Page;
+		var pageSizeClamped = request.PageSize <= 0 ? 10 : Math.Min(request.PageSize, 100);
 
-        return Ok(categories);
+		var query = db.Categories.AsNoTracking();
+
+		if (!string.IsNullOrWhiteSpace(request.Search))
+		{
+			var term = $"%{request.Search.Trim()}%";
+			query = query.Where(c => c.Name != null && EF.Functions.Like(c.Name, term));
+		}
+
+		var totalItems = await query.CountAsync(ct);
+
+		var items = await query
+			.OrderBy(c => c.Name)
+			.Skip(pageNumber * pageSizeClamped)
+			.Take(pageSizeClamped)
+			.Select(c => new CategoryResponse
+			{
+				Id = c.Id,
+				Name = c.Name ?? string.Empty,
+				Description = c.Description,
+				ParentId = c.ParentId
+			})
+			.ToListAsync(ct);
+
+		var totalPages = pageSizeClamped == 0 ? 0 : (int)Math.Ceiling(totalItems / (double)pageSizeClamped);
+		Response.Headers["X-Total-Count"] = totalItems.ToString();
+
+		return Ok(new PagedResponse<CategoryResponse>
+		{
+			Items = items,
+			Page = pageNumber,
+			PageSize = pageSizeClamped,
+			TotalItems = totalItems,
+			TotalPages = totalPages
+		});
     }
 
 	/// <summary>

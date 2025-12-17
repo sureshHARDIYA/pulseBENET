@@ -195,11 +195,10 @@ public class QuizAttemptController(AppDbContext db, ICurrentUser currentUser): B
 
 	[HttpGet("leaderboard")]
 	[Authorize]
-	public async Task<IActionResult> GetLeaderboard([FromQuery] int limit = 50, CancellationToken ct = default)
+	public async Task<IActionResult> GetLeaderboard([FromQuery] int limit = 50, [FromQuery] SearchRequest? request = null, CancellationToken ct = default)
 	{
-		limit = Math.Clamp(limit, 1, 200);
-		
-		var top = await db.QuizAttempts
+		// Base query (grouped by user)
+		var grouped = db.QuizAttempts
 			.AsNoTracking()
 			.Where(a => a.Status == QuizAttemptStatus.Submitted && a.UserId != null)
 			.GroupBy(a => a.UserId!)
@@ -209,12 +208,37 @@ public class QuizAttemptController(AppDbContext db, ICurrentUser currentUser): B
 				TotalScore = g.Sum(a => a.Score),
 				Attempts = g.Count(),
 				AverageScore = g.Average(a => a.Score)
-			})
+			});
+
+		// Total before paging
+		var total = await grouped.CountAsync(ct);
+
+		// If page/pageSize are explicitly provided, use them; otherwise keep legacy "limit"
+		IQueryable<LeaderboardEntryResponse> paged = grouped
 			.OrderByDescending(x => x.TotalScore)
-			.ThenByDescending(x => x.Attempts)
-			.Take(limit)
-			.ToListAsync(ct);
-		
+			.ThenByDescending(x => x.Attempts);
+
+		bool hasPagingParams =
+			HttpContext.Request.Query.ContainsKey("page") ||
+			HttpContext.Request.Query.ContainsKey("pageSize");
+
+		if (hasPagingParams && request is not null)
+		{
+			var pageNumber = request.Page < 1 ? 1 : request.Page;
+			var pageSizeClamped = request.PageSize <= 0 ? 20 : Math.Min(request.PageSize, 100);
+			paged = paged
+				.Skip((pageNumber - 1) * pageSizeClamped)
+				.Take(pageSizeClamped);
+		}
+		else
+		{
+			limit = Math.Clamp(limit, 1, 200);
+			paged = paged.Take(limit);
+		}
+
+		var top = await paged.ToListAsync(ct);
+
+		Response.Headers["X-Total-Count"] = total.ToString();
 		return Ok(top);
 	}
 

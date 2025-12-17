@@ -66,17 +66,42 @@ public class QuestionsController(AppDbContext dbContext): BaseController
 	}
 
     [HttpGet]
-    [ProducesResponseType(typeof(List<QuestionResponse>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAllQuestions([FromRoute] Guid quizId, CancellationToken ct)
+	[ProducesResponseType(typeof(PagedResponse<QuestionResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAllQuestions([FromRoute] Guid quizId, [FromQuery] SearchRequest request, CancellationToken ct)
     {
-        var questions = await dbContext.Questions
-                .AsNoTracking()
-                .Where(x => x.QuizId == quizId)
-                .OrderBy(x => x.Title)
-                .Select(QuestionProjection.List)
-                .ToListAsync(ct);
+        var pageNumber = request.Page < 0 ? 0 : request.Page;
+        var pageSizeClamped = request.PageSize <= 0 ? 10 : Math.Min(request.PageSize, 100);
+
+        var query = dbContext.Questions
+            .AsNoTracking()
+            .Where(x => x.QuizId == quizId);
+
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var term = $"%{request.Search.Trim()}%";
+            query = query.Where(q => q.Title != null && EF.Functions.Like(q.Title, term));
+        }
+
+        var totalItems = await query.CountAsync(ct);
+
+        var items = await query
+            .OrderBy(x => x.Title)
+            .Skip(pageNumber * pageSizeClamped)
+            .Take(pageSizeClamped)
+            .Select(QuestionProjection.List)
+            .ToListAsync(ct);
+
+        var totalPages = pageSizeClamped == 0 ? 0 : (int)Math.Ceiling(totalItems / (double)pageSizeClamped);
+        Response.Headers["X-Total-Count"] = totalItems.ToString();
         
-        return Ok(questions);
+        return Ok(new PagedResponse<QuestionResponse>
+        {
+	        Items = items,
+	        Page = pageNumber,
+	        PageSize = pageSizeClamped,
+	        TotalItems = totalItems,
+	        TotalPages = totalPages
+        });
     }
 
     [HttpPost]
