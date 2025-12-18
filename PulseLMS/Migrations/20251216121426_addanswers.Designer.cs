@@ -14,7 +14,7 @@ namespace PulseLMS.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20251216121426_addanswers")]
-    partial class addanswers
+    partial class AddAnswers
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -42,7 +42,11 @@ public sealed class CategoriesController(AppDbContext db, ICurrentUser currentUs
 				Id = c.Id,
 				Name = c.Name ?? string.Empty,
 				Description = c.Description,
-				ParentId = c.ParentId
+				ParentId = c.ParentId,
+				CreatedAt = c.CreatedAt,
+				UpdatedAt = c.UpdatedAt,
+				CreatedBy = c.CreatedBy,
+				UpdatedBy = c.UpdatedBy
 			})
 			.ToListAsync(ct);
 
@@ -78,7 +82,11 @@ public sealed class CategoriesController(AppDbContext db, ICurrentUser currentUs
 					Id = c.Id,
 					Name = c.Name ?? string.Empty,
 					Description = c.Description,
-					ParentId = c.ParentId
+					ParentId = c.ParentId,
+					CreatedAt = c.CreatedAt,
+					UpdatedAt = c.UpdatedAt,
+					CreatedBy = c.CreatedBy,
+					UpdatedBy = c.UpdatedBy
 				})
 				.FirstOrDefaultAsync(ct);
 
@@ -162,7 +170,11 @@ public sealed class CategoriesController(AppDbContext db, ICurrentUser currentUs
             Id = entity.Id,
             Name = entity.Name ?? string.Empty,
             Description = entity.Description,
-            ParentId = entity.ParentId
+			ParentId = entity.ParentId,
+			CreatedAt = entity.CreatedAt,
+			UpdatedAt = entity.UpdatedAt,
+			CreatedBy = entity.CreatedBy,
+			UpdatedBy = entity.UpdatedBy
         };
 
 			return CreatedAtAction(nameof(GetById), new { id = entity.Id }, response);
@@ -219,7 +231,11 @@ public sealed class CategoriesController(AppDbContext db, ICurrentUser currentUs
             Id = category.Id,
             Name = category.Name,
             Description = category.Description,
-            ParentId = category.ParentId
+			ParentId = category.ParentId,
+			CreatedAt = category.CreatedAt,
+			UpdatedAt = category.UpdatedAt,
+			CreatedBy = category.CreatedBy,
+			UpdatedBy = category.UpdatedBy
         });
     }
 

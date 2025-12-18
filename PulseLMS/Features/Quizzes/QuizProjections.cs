@@ -14,11 +14,19 @@ public static class QuizProjections
         Description = q.Description,
         Type = q.Type,
         Access = q.Access,
+		CreatedAt = q.CreatedAt,
+		UpdatedAt = q.UpdatedAt,
+		CreatedBy = q.CreatedBy,
+		UpdatedBy = q.UpdatedBy,
         Categories = q.Categories
             .Select(cat => new CategoryResponse()
             {
                 Id = cat.Id,
-                Name = cat.Name ?? string.Empty
+				Name = cat.Name ?? string.Empty,
+				CreatedAt = cat.CreatedAt,
+				UpdatedAt = cat.UpdatedAt,
+				CreatedBy = cat.CreatedBy,
+				UpdatedBy = cat.UpdatedBy
             })
             .ToList()
     };

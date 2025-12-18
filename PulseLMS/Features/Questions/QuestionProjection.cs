@@ -17,6 +17,10 @@ public static class QuestionProjection
             SortOrder = q.SortOrder,
             Points = q.Points,
             AllowMultipleCorrect = q.AllowMultipleCorrect,
+				CreatedAt = q.CreatedAt,
+				UpdatedAt = q.UpdatedAt,
+				CreatedBy = q.CreatedBy,
+				UpdatedBy = q.UpdatedBy,
             Options = q.Options
                 .AsQueryable()
                 .OrderBy(o => o.SortOrder)
@@ -33,7 +37,11 @@ public static class QuestionProjection
             Description = q.Description,
             SortOrder = q.SortOrder,
             Points = q.Points,
-            AllowMultipleCorrect = q.AllowMultipleCorrect
+				AllowMultipleCorrect = q.AllowMultipleCorrect,
+				CreatedAt = q.CreatedAt,
+				UpdatedAt = q.UpdatedAt,
+				CreatedBy = q.CreatedBy,
+				UpdatedBy = q.UpdatedBy
         };
 
     public static readonly Expression<Func<Question, QuestionResponse>> DetailWithOptions =
@@ -46,6 +54,10 @@ public static class QuestionProjection
             SortOrder = q.SortOrder,
             Points = q.Points,
             AllowMultipleCorrect = q.AllowMultipleCorrect,
+				CreatedAt = q.CreatedAt,
+				UpdatedAt = q.UpdatedAt,
+				CreatedBy = q.CreatedBy,
+				UpdatedBy = q.UpdatedBy,
             Options = q.Options
                 .AsQueryable()
                 .OrderBy(o => o.SortOrder)

@@ -1,17 +1,19 @@
+using PulseLMS.Common;
+
 namespace PulseLMS.Features.Categories.DTO;
 
-public sealed class CategoryResponse
+public sealed class CategoryResponse : AuditLogResponse
 {
-    public Guid Id { get; init; }
-    public string Name { get; init; } = null!;
-    public string? Description { get; init; }
-    public Guid? ParentId { get; init; }
+	public Guid Id { get; init; }
+	public string Name { get; init; } = null!;
+	public string? Description { get; init; }
+	public Guid? ParentId { get; init; }
 }
 
-public sealed class CategoryTreeResponse
+public sealed class CategoryTreeResponse: AuditLogResponse
 {
-    public Guid Id { get; init; }
-    public string Name { get; init; } = null!;
-    public string? Description { get; init; }
-    public List<CategoryTreeResponse> Children { get; init; } = [];
+	public Guid Id { get; init; }
+	public string Name { get; init; } = null!;
+	public string? Description { get; init; }
+	public List<CategoryTreeResponse> Children { get; init; } = [];
 }

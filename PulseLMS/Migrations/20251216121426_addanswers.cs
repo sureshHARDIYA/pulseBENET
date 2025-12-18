@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace PulseLMS.Migrations
 {
     /// <inheritdoc />
-    public partial class addanswers : Migration
+    public partial class AddAnswers : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
