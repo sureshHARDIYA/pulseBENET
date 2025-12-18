@@ -129,7 +129,7 @@ public class QuestionsController(AppDbContext dbContext): BaseController
             .Select(QuestionProjection.Detail)
             .FirstAsync(ct);
         
-        return CreatedAtAction(nameof(GetQuestionById), new { quizId, id = response.Id }, response);
+        return CreatedAtAction(nameof(GetQuestionById), new { quizId, questionId = response.Id }, response);
     }
     
     [HttpGet("{questionId:guid}")]

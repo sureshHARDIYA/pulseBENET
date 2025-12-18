@@ -12,7 +12,10 @@ public static class QuestionOptionProjection
             Id = o.Id,
             Text = o.Text,
             SortOrder = o.SortOrder,
-            Score = o.Score
+            Score = o.Score,
+            PromptCorrect = o.PromptCorrect,
+            PromptWrong = o.PromptWrong,
+            IsCorrect = o.IsCorrect
         };
 
     public static readonly Expression<Func<QuestionOption, QuestionOptionResponse>> Detail =
