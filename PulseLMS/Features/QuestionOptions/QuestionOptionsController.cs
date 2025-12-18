@@ -102,6 +102,45 @@ public sealed class QuestionOptionsController(AppDbContext dbContext): BaseContr
 
         return Ok(option);
     }
+	
+	[HttpPut("{id:guid}")]
+	[ProducesResponseType(typeof(QuestionOptionResponse), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	public async Task<IActionResult> UpdateQuestionOption(
+		[FromRoute] Guid quizId,
+		[FromRoute] Guid questionId,
+		[FromRoute] Guid id,
+		[FromBody] QuestionOptionRequest request,
+		CancellationToken ct)
+	{
+		var option = await dbContext.QuestionOptions
+			.Include(o => o.Question)
+			.FirstOrDefaultAsync(
+				o => o.Id == id &&
+				     o.QuestionId == questionId &&
+				     o.Question.QuizId == quizId,
+				ct);
+		
+		if (option is null)
+			return NotFound();
+		
+		option.Text = request.Text.Trim();
+		option.SortOrder = request.SortOrder;
+		option.Score = request.Score;
+		option.IsCorrect = request.IsCorrect;
+		option.PromptCorrect = string.IsNullOrWhiteSpace(request.PromptCorrect) ? null : request.PromptCorrect.Trim();
+		option.PromptWrong = string.IsNullOrWhiteSpace(request.PromptWrong) ? null : request.PromptWrong.Trim();
+		
+		await dbContext.SaveChangesAsync(ct);
+		
+		var response = await dbContext.QuestionOptions
+			.AsNoTracking()
+			.Where(o => o.Id == id)
+			.Select(QuestionOptionProjection.Detail)
+			.FirstAsync(ct);
+		
+		return Ok(response);
+	}
     
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
