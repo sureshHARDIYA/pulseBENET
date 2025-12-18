@@ -58,6 +58,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddHttpContextAccessor();
+builder.Logging.AddSimpleConsole();
 
 // CORS
 var allowedOrigins = builder.Configuration
